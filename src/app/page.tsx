@@ -13,19 +13,10 @@ import {
   CheckCircle2,
   Trash2,
   Search,
-  Leaf
+  AlertCircle
 } from "lucide-react";
-
-// --- Types ---
-type MenuItem = {
-  id: string;
-  name: string;
-  price: number | { half: number; full: number };
-  category: "Main Course" | "Appetizers" | "Drinks";
-  description?: string;
-  image: string;
-  hasVariants?: boolean;
-};
+import { MENU_ITEMS, MenuItem } from "@/data/menu";
+import { supabase } from "@/lib/supabase";
 
 type CartItem = {
   id: string;
@@ -35,123 +26,6 @@ type CartItem = {
   quantity: number;
   variant?: "half" | "full";
 };
-
-// --- Data ---
-const MENU_ITEMS: MenuItem[] = [
-  {
-    id: "m1",
-    name: "Veg Burger",
-    price: 100,
-    category: "Main Course",
-    image: "/images/veg_burger.png",
-  },
-  {
-    id: "m2",
-    name: "Cheese Burger",
-    price: 120,
-    category: "Main Course",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400&h=300",
-  },
-  {
-    id: "m3",
-    name: "Paneer Burger",
-    price: 150,
-    category: "Main Course",
-    image: "/images/paneer_burger.png",
-  },
-  {
-    id: "m4",
-    name: "Pasta",
-    price: { half: 80, full: 150 },
-    category: "Main Course",
-    hasVariants: true,
-    image: "/images/pasta.png",
-  },
-  {
-    id: "m5",
-    name: "Hakka Noodles",
-    price: { half: 90, full: 170 },
-    category: "Main Course",
-    hasVariants: true,
-    image: "/images/hakka_noodles.png",
-  },
-  {
-    id: "a1",
-    name: "French Fries",
-    price: 50,
-    category: "Appetizers",
-    image: "/images/french_fries.png",
-  },
-  {
-    id: "a2",
-    name: "Samosa",
-    price: 15,
-    category: "Appetizers",
-    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&q=80&w=400&h=300",
-  },
-  {
-    id: "a3",
-    name: "Pizza Samosa",
-    price: 25,
-    category: "Appetizers",
-    image: "/images/pizza_samosa.png",
-  },
-  {
-    id: "a4",
-    name: "Dahi k sholay [6pcs]",
-    price: 160,
-    category: "Appetizers",
-    image: "/images/dahi_k_sholay.png",
-  },
-  {
-    id: "d1",
-    name: "Masala Chaas",
-    price: 20,
-    category: "Drinks",
-    description: "300ML",
-    image: "/images/masala_chaas.png",
-  },
-  {
-    id: "d2",
-    name: "Dry fruit Lassi",
-    price: 60,
-    category: "Drinks",
-    description: "300ML",
-    image: "/images/dry_fruit_lassi.png",
-  },
-  {
-    id: "d3",
-    name: "Lassi",
-    price: 40,
-    category: "Drinks",
-    description: "300ML",
-    image: "/images/lassi.png",
-  },
-  {
-    id: "d4",
-    name: "Aam Panna",
-    price: 50,
-    category: "Drinks",
-    description: "300ML",
-    image: "/images/aam_panna.png",
-  },
-  {
-    id: "d5",
-    name: "Lemon Soda",
-    price: 60,
-    category: "Drinks",
-    description: "300ML",
-    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=400&h=300",
-  },
-  {
-    id: "d6",
-    name: "Cold Coffee",
-    price: 90,
-    category: "Drinks",
-    description: "300ML",
-    image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&q=80&w=400&h=300",
-  },
-];
 
 const CATEGORIES = ["Main Course", "Appetizers", "Drinks"] as const;
 
@@ -163,10 +37,62 @@ export default function ApniRasoi() {
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Stock status from Supabase
+  const [stockStatus, setStockStatus] = useState<Record<string, boolean>>({});
+
   // Variant selections per menu item (for items with half/full)
   const [variants, setVariants] = useState<Record<string, "half" | "full">>({});
 
-  // Show toast notification
+  useEffect(() => {
+    // Fetch stock status on mount
+    const fetchStock = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('menu_status')
+          .select('id, is_available');
+        
+        if (error) {
+          console.error("Error fetching stock:", error);
+          return;
+        }
+
+        if (data) {
+          const statusMap: Record<string, boolean> = {};
+          data.forEach(item => {
+            statusMap[item.id] = item.is_available;
+          });
+          setStockStatus(statusMap);
+        }
+      } catch (err) {
+        console.error("Failed to load stock status", err);
+      }
+    };
+    
+    fetchStock();
+    
+    // Optional: Subscribe to real-time changes
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'menu_status' },
+        (payload) => {
+          const updatedRow = payload.new as { id: string; is_available: boolean };
+          if (updatedRow && updatedRow.id) {
+            setStockStatus(prev => ({
+              ...prev,
+              [updatedRow.id]: updatedRow.is_available
+            }));
+          }
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const showToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => {
@@ -174,7 +100,6 @@ export default function ApniRasoi() {
     }, 2500);
   };
 
-  // Group and filter menu items
   const groupedMenu = useMemo(() => {
     const groups: Record<string, MenuItem[]> = {};
     CATEGORIES.forEach((cat) => {
@@ -195,12 +120,15 @@ export default function ApniRasoi() {
   };
 
   const addToCart = (item: MenuItem) => {
+    // Check if out of stock
+    if (stockStatus[item.id] === false) return;
+
     let price = 0;
     let selectedVariant: "half" | "full" | undefined = undefined;
     let cartItemId = item.id;
 
     if (item.hasVariants && typeof item.price === "object") {
-      selectedVariant = variants[item.id] || "full"; // default to full if not selected
+      selectedVariant = variants[item.id] || "full";
       price = item.price[selectedVariant];
       cartItemId = `${item.id}-${selectedVariant}`;
     } else if (typeof item.price === "number") {
@@ -254,20 +182,16 @@ export default function ApniRasoi() {
   const handleCheckout = () => {
     if (cart.length === 0) return;
     
-    // Format message for WhatsApp
     let message = `*New Order: APNI RASOI*%0A%0A`;
-    
     cart.forEach(item => {
       const variantText = item.variant ? ` (${item.variant})` : '';
       message += `${item.name}${variantText} x ${item.quantity} - ₹${item.price * item.quantity}%0A`;
     });
     
     message += `%0A*Total Amount: ₹${totalAmount}*`;
-    
     if (isBulkOrder) {
       message += `%0A%0A*Note: This is a Bulk/Society Order inquiry.*`;
     }
-
     message += `%0A%0APlease let me know the estimated delivery time.`;
 
     const phoneNumber = "919616789607"; 
@@ -287,7 +211,6 @@ export default function ApniRasoi() {
         {toastMessage}
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 w-full max-w-4xl mx-auto md:pr-80 transition-all duration-300">
         
         {/* HERO SECTION */}
@@ -300,7 +223,6 @@ export default function ApniRasoi() {
           />
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-t from-dark to-transparent">
             
-            {/* VEG BADGE */}
             <div className="absolute top-4 right-4 bg-green-600/90 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border border-green-400/50 backdrop-blur-md shadow-lg shadow-green-900/50">
               <span className="w-2.5 h-2.5 rounded-full bg-white block">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-600 block m-[2px]"></span>
@@ -340,7 +262,6 @@ export default function ApniRasoi() {
             <div className="flex gap-4 max-w-3xl mx-auto">
               {CATEGORIES.map((cat) => {
                 const Icon = cat === "Main Course" ? UtensilsCrossed : cat === "Appetizers" ? ChefHat : Coffee;
-                // Only show category button if it has items (especially during search)
                 if (searchQuery && !groupedMenu[cat]) return null;
 
                 return (
@@ -391,82 +312,100 @@ export default function ApniRasoi() {
                     {cat}
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {groupedMenu[cat].map((item) => (
-                      <div 
-                        key={item.id} 
-                        className="bg-dark-paper border border-dark-border rounded-2xl p-4 flex gap-4 hover:border-primary/50 transition-colors group"
-                      >
-                        <div className="w-32 h-32 rounded-xl overflow-hidden shrink-0 bg-dark relative">
-                          <img 
-                            src={item.image} 
-                            alt={item.name} 
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="flex-1 flex flex-col justify-between">
-                          <div>
-                            <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors flex items-center justify-between">
-                              {item.name}
-                              <span className="w-2.5 h-2.5 border border-green-500 flex justify-center items-center shrink-0">
-                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                              </span>
-                            </h3>
-                            {item.description && (
-                              <p className="text-xs text-gray-400 mt-1">{item.description}</p>
-                            )}
-                            
-                            <div className="mt-2 font-semibold text-gray-200">
-                              {typeof item.price === "number" ? (
-                                <span>₹{item.price}</span>
-                              ) : (
-                                <span className="text-sm text-gray-400 font-normal block">
-                                  Half: ₹{item.price.half} | Full: ₹{item.price.full}
+                    {groupedMenu[cat].map((item) => {
+                      const isOutOfStock = stockStatus[item.id] === false;
+                      
+                      return (
+                        <div 
+                          key={item.id} 
+                          className={`bg-dark-paper border border-dark-border rounded-2xl p-4 flex gap-4 transition-colors group ${
+                            isOutOfStock ? "opacity-60 grayscale-[0.5]" : "hover:border-primary/50"
+                          }`}
+                        >
+                          <div className="w-32 h-32 rounded-xl overflow-hidden shrink-0 bg-dark relative">
+                            <img 
+                              src={item.image} 
+                              alt={item.name} 
+                              className={`w-full h-full object-cover transition-transform duration-500 ${!isOutOfStock && "group-hover:scale-110"}`}
+                              loading="lazy"
+                            />
+                            {isOutOfStock && (
+                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <span className="text-white font-bold text-xs px-2 py-1 bg-red-600/90 rounded border border-red-400 backdrop-blur-sm -rotate-12">
+                                  SOLD OUT
                                 </span>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
+                          <div className="flex-1 flex flex-col justify-between">
+                            <div>
+                              <h3 className={`font-bold text-lg leading-tight transition-colors flex items-center justify-between ${!isOutOfStock && "group-hover:text-primary"}`}>
+                                {item.name}
+                                <span className="w-2.5 h-2.5 border border-green-500 flex justify-center items-center shrink-0">
+                                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                </span>
+                              </h3>
+                              {item.description && (
+                                <p className="text-xs text-gray-400 mt-1">{item.description}</p>
+                              )}
+                              
+                              <div className="mt-2 font-semibold text-gray-200">
+                                {typeof item.price === "number" ? (
+                                  <span>₹{item.price}</span>
+                                ) : (
+                                  <span className="text-sm text-gray-400 font-normal block">
+                                    Half: ₹{item.price.half} | Full: ₹{item.price.full}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
 
-                          <div className="mt-3">
-                            {item.hasVariants ? (
-                              <div className="flex flex-col gap-2">
-                                <div className="flex bg-dark rounded-lg p-1 w-fit">
-                                  <button 
-                                    onClick={() => handleVariantChange(item.id, "half")}
-                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                      (variants[item.id] || "full") === "half" ? "bg-primary text-white" : "text-gray-400 hover:text-white"
-                                    }`}
+                            <div className="mt-3">
+                              {isOutOfStock ? (
+                                <div className="text-red-400 text-sm font-medium flex items-center gap-1.5">
+                                  <AlertCircle size={14} />
+                                  Out of Stock
+                                </div>
+                              ) : item.hasVariants ? (
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex bg-dark rounded-lg p-1 w-fit">
+                                    <button 
+                                      onClick={() => handleVariantChange(item.id, "half")}
+                                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                        (variants[item.id] || "full") === "half" ? "bg-primary text-white" : "text-gray-400 hover:text-white"
+                                      }`}
+                                    >
+                                      Half
+                                    </button>
+                                    <button 
+                                      onClick={() => handleVariantChange(item.id, "full")}
+                                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                        (variants[item.id] || "full") === "full" ? "bg-primary text-white" : "text-gray-400 hover:text-white"
+                                      }`}
+                                    >
+                                      Full
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => addToCart(item)}
+                                    className="bg-primary/10 text-primary hover:bg-primary hover:text-white w-fit px-4 py-1.5 rounded-lg text-sm font-bold transition-colors"
                                   >
-                                    Half
-                                  </button>
-                                  <button 
-                                    onClick={() => handleVariantChange(item.id, "full")}
-                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                      (variants[item.id] || "full") === "full" ? "bg-primary text-white" : "text-gray-400 hover:text-white"
-                                    }`}
-                                  >
-                                    Full
+                                    ADD +
                                   </button>
                                 </div>
+                              ) : (
                                 <button
                                   onClick={() => addToCart(item)}
-                                  className="bg-primary/10 text-primary hover:bg-primary hover:text-white w-fit px-4 py-1.5 rounded-lg text-sm font-bold transition-colors"
+                                  className="bg-primary/10 text-primary hover:bg-primary hover:text-white px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95"
                                 >
                                   ADD +
                                 </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => addToCart(item)}
-                                className="bg-primary/10 text-primary hover:bg-primary hover:text-white px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95"
-                              >
-                                ADD +
-                              </button>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )
@@ -544,7 +483,6 @@ export default function ApniRasoi() {
               </div>
             ) : (
               <>
-                {/* BULK ORDER TOGGLE */}
                 <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-6">
                   <label className="flex items-center justify-between cursor-pointer">
                     <span className="font-semibold text-sm">Placing a Bulk/Society Order?</span>
