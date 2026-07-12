@@ -47,6 +47,14 @@ export const MENU_ITEMS: MenuItem[] = [
     image: "/images/hakka_noodles.png",
   },
   {
+    id: "m6",
+    name: "White Sauce Pasta",
+    price: { half: 100, full: 200 },
+    category: "Main Course",
+    hasVariants: true,
+    image: "/images/white_sauce_pasta.png",
+  },
+  {
     id: "a1",
     name: "French Fries",
     price: 50,
