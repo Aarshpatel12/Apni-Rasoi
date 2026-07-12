@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { 
   ShoppingCart, 
   Minus, 
@@ -11,7 +11,9 @@ import {
   ChefHat,
   Coffee,
   CheckCircle2,
-  Trash2
+  Trash2,
+  Search,
+  Leaf
 } from "lucide-react";
 
 // --- Types ---
@@ -41,7 +43,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Veg Burger",
     price: 100,
     category: "Main Course",
-    image: "https://images.unsplash.com/photo-1585238342024-78d387f4a707?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/veg_burger.png",
   },
   {
     id: "m2",
@@ -55,7 +57,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Paneer Burger",
     price: 150,
     category: "Main Course",
-    image: "https://images.unsplash.com/photo-1620189507195-68309c04c4d0?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/paneer_burger.png",
   },
   {
     id: "m4",
@@ -71,7 +73,7 @@ const MENU_ITEMS: MenuItem[] = [
     price: { half: 90, full: 170 },
     category: "Main Course",
     hasVariants: true,
-    image: "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/hakka_noodles.png",
   },
   {
     id: "a1",
@@ -92,14 +94,14 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Pizza Samosa",
     price: 25,
     category: "Appetizers",
-    image: "https://images.unsplash.com/photo-1587280511634-a41cb5707328?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/pizza_samosa.png",
   },
   {
     id: "a4",
     name: "Dahi k sholay [6pcs]",
     price: 160,
     category: "Appetizers",
-    image: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/dahi_k_sholay.png",
   },
   {
     id: "d1",
@@ -107,7 +109,7 @@ const MENU_ITEMS: MenuItem[] = [
     price: 20,
     category: "Drinks",
     description: "300ML",
-    image: "https://images.unsplash.com/photo-1654109724102-fa32cce65b11?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/masala_chaas.png",
   },
   {
     id: "d2",
@@ -115,7 +117,7 @@ const MENU_ITEMS: MenuItem[] = [
     price: 60,
     category: "Drinks",
     description: "300ML",
-    image: "https://images.unsplash.com/photo-1626082896492-766af4eb6501?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/dry_fruit_lassi.png",
   },
   {
     id: "d3",
@@ -131,7 +133,7 @@ const MENU_ITEMS: MenuItem[] = [
     price: 50,
     category: "Drinks",
     description: "300ML",
-    image: "https://images.unsplash.com/photo-1527661591475-527312dd65f5?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/aam_panna.png",
   },
   {
     id: "d5",
@@ -158,18 +160,35 @@ export default function ApniRasoi() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isBulkOrder, setIsBulkOrder] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Variant selections per menu item (for items with half/full)
   const [variants, setVariants] = useState<Record<string, "half" | "full">>({});
 
-  // Group menu items by category
+  // Show toast notification
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 2500);
+  };
+
+  // Group and filter menu items
   const groupedMenu = useMemo(() => {
     const groups: Record<string, MenuItem[]> = {};
     CATEGORIES.forEach((cat) => {
-      groups[cat] = MENU_ITEMS.filter((item) => item.category === cat);
+      const filteredItems = MENU_ITEMS.filter(
+        (item) => 
+          item.category === cat && 
+          item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (filteredItems.length > 0) {
+        groups[cat] = filteredItems;
+      }
     });
     return groups;
-  }, []);
+  }, [searchQuery]);
 
   const handleVariantChange = (menuId: string, variant: "half" | "full") => {
     setVariants((prev) => ({ ...prev, [menuId]: variant }));
@@ -208,8 +227,7 @@ export default function ApniRasoi() {
       ];
     });
     
-    // Auto open cart on first item
-    if (cart.length === 0) setIsCartOpen(true);
+    showToast(`Added ${item.name} to cart`);
   };
 
   const updateQuantity = (cartItemId: string, delta: number) => {
@@ -252,13 +270,23 @@ export default function ApniRasoi() {
 
     message += `%0A%0APlease let me know the estimated delivery time.`;
 
-    // A placeholder number - user can replace with actual business number
     const phoneNumber = "919616789607"; 
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
   return (
-    <div className="min-h-screen bg-dark text-white pb-24 md:pb-0 flex">
+    <div className="min-h-screen bg-dark text-white pb-24 md:pb-0 flex flex-col relative">
+      
+      {/* TOAST NOTIFICATION */}
+      <div 
+        className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-green-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-green-500/30 flex items-center gap-2 transition-all duration-300 ${
+          toastMessage ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-10 pointer-events-none"
+        }`}
+      >
+        <CheckCircle2 size={20} />
+        {toastMessage}
+      </div>
+
       {/* Main Content Area */}
       <div className="flex-1 w-full max-w-4xl mx-auto md:pr-80 transition-all duration-300">
         
@@ -271,6 +299,15 @@ export default function ApniRasoi() {
             className="absolute inset-0 w-full h-full object-cover"
           />
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-t from-dark to-transparent">
+            
+            {/* VEG BADGE */}
+            <div className="absolute top-4 right-4 bg-green-600/90 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border border-green-400/50 backdrop-blur-md shadow-lg shadow-green-900/50">
+              <span className="w-2.5 h-2.5 rounded-full bg-white block">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-600 block m-[2px]"></span>
+              </span>
+              100% PURE VEG
+            </div>
+
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-2 tracking-tight">
               APNI <span className="text-primary">RASOI</span>
             </h1>
@@ -284,119 +321,175 @@ export default function ApniRasoi() {
           </div>
         </div>
 
-        {/* STICKY CATEGORY NAV */}
-        <div className="sticky top-0 z-30 bg-dark/95 backdrop-blur-md border-b border-dark-border py-4 px-4 overflow-x-auto no-scrollbar">
-          <div className="flex gap-4 max-w-3xl mx-auto">
-            {CATEGORIES.map((cat) => {
-              const Icon = cat === "Main Course" ? UtensilsCrossed : cat === "Appetizers" ? ChefHat : Coffee;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    setActiveCategory(cat);
-                    const element = document.getElementById(cat);
-                    if (element) {
-                      const y = element.getBoundingClientRect().top + window.scrollY - 100;
-                      window.scrollTo({ top: y, behavior: 'smooth' });
-                    }
-                  }}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all whitespace-nowrap ${
-                    activeCategory === cat
-                      ? "bg-primary text-white shadow-lg shadow-primary/30"
-                      : "bg-dark-paper text-gray-400 hover:text-white hover:bg-dark-border"
-                  }`}
-                >
-                  <Icon size={18} />
-                  {cat}
-                </button>
-              );
-            })}
+        {/* SEARCH & STICKY CATEGORY NAV */}
+        <div className="sticky top-0 z-30 bg-dark/95 backdrop-blur-md border-b border-dark-border">
+          <div className="p-4 max-w-3xl mx-auto border-b border-dark-border/50">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Search for delicious food..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-dark-paper border border-dark-border rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-white placeholder-gray-500"
+              />
+            </div>
+          </div>
+
+          <div className="py-3 px-4 overflow-x-auto no-scrollbar">
+            <div className="flex gap-4 max-w-3xl mx-auto">
+              {CATEGORIES.map((cat) => {
+                const Icon = cat === "Main Course" ? UtensilsCrossed : cat === "Appetizers" ? ChefHat : Coffee;
+                // Only show category button if it has items (especially during search)
+                if (searchQuery && !groupedMenu[cat]) return null;
+
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setActiveCategory(cat);
+                      const element = document.getElementById(cat);
+                      if (element) {
+                        const y = element.getBoundingClientRect().top + window.scrollY - 140;
+                        window.scrollTo({ top: y, behavior: 'smooth' });
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                      activeCategory === cat
+                        ? "bg-primary text-white shadow-lg shadow-primary/30"
+                        : "bg-dark-paper text-gray-400 hover:text-white hover:bg-dark-border"
+                    }`}
+                  >
+                    <Icon size={16} />
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
         {/* MENU LIST */}
         <div className="p-4 space-y-12 max-w-3xl mx-auto mt-6">
-          {CATEGORIES.map((cat) => (
-            <div key={cat} id={cat} className="scroll-mt-32">
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 border-b border-dark-border pb-2">
-                {cat}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {groupedMenu[cat].map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="bg-dark-paper border border-dark-border rounded-2xl p-4 flex gap-4 hover:border-primary/50 transition-colors group"
-                  >
-                    <div className="w-32 h-32 rounded-xl overflow-hidden shrink-0 bg-dark relative">
-                      <img 
-                        src={item.image} 
-                        alt={item.name} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="flex-1 flex flex-col justify-between">
-                      <div>
-                        <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">{item.name}</h3>
-                        {item.description && (
-                          <p className="text-sm text-gray-400 mt-1">{item.description}</p>
-                        )}
-                        
-                        <div className="mt-2 font-semibold text-gray-200">
-                          {typeof item.price === "number" ? (
-                            <span>₹{item.price}</span>
-                          ) : (
-                            <span className="text-sm text-gray-400 font-normal block">
-                              Half: ₹{item.price.half} | Full: ₹{item.price.full}
-                            </span>
-                          )}
+          {Object.keys(groupedMenu).length === 0 ? (
+            <div className="text-center text-gray-500 py-12">
+              <Search size={48} className="mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-medium text-white mb-2">No items found</h3>
+              <p>We couldn't find anything matching "{searchQuery}".</p>
+              <button 
+                onClick={() => setSearchQuery("")}
+                className="mt-4 text-primary font-medium hover:underline"
+              >
+                Clear Search
+              </button>
+            </div>
+          ) : (
+            CATEGORIES.map((cat) => (
+              groupedMenu[cat] && (
+                <div key={cat} id={cat} className="scroll-mt-40">
+                  <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 border-b border-dark-border pb-2">
+                    {cat}
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {groupedMenu[cat].map((item) => (
+                      <div 
+                        key={item.id} 
+                        className="bg-dark-paper border border-dark-border rounded-2xl p-4 flex gap-4 hover:border-primary/50 transition-colors group"
+                      >
+                        <div className="w-32 h-32 rounded-xl overflow-hidden shrink-0 bg-dark relative">
+                          <img 
+                            src={item.image} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="flex-1 flex flex-col justify-between">
+                          <div>
+                            <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors flex items-center justify-between">
+                              {item.name}
+                              <span className="w-2.5 h-2.5 border border-green-500 flex justify-center items-center shrink-0">
+                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                              </span>
+                            </h3>
+                            {item.description && (
+                              <p className="text-xs text-gray-400 mt-1">{item.description}</p>
+                            )}
+                            
+                            <div className="mt-2 font-semibold text-gray-200">
+                              {typeof item.price === "number" ? (
+                                <span>₹{item.price}</span>
+                              ) : (
+                                <span className="text-sm text-gray-400 font-normal block">
+                                  Half: ₹{item.price.half} | Full: ₹{item.price.full}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-3">
+                            {item.hasVariants ? (
+                              <div className="flex flex-col gap-2">
+                                <div className="flex bg-dark rounded-lg p-1 w-fit">
+                                  <button 
+                                    onClick={() => handleVariantChange(item.id, "half")}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                      (variants[item.id] || "full") === "half" ? "bg-primary text-white" : "text-gray-400 hover:text-white"
+                                    }`}
+                                  >
+                                    Half
+                                  </button>
+                                  <button 
+                                    onClick={() => handleVariantChange(item.id, "full")}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                      (variants[item.id] || "full") === "full" ? "bg-primary text-white" : "text-gray-400 hover:text-white"
+                                    }`}
+                                  >
+                                    Full
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => addToCart(item)}
+                                  className="bg-primary/10 text-primary hover:bg-primary hover:text-white w-fit px-4 py-1.5 rounded-lg text-sm font-bold transition-colors"
+                                >
+                                  ADD +
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => addToCart(item)}
+                                className="bg-primary/10 text-primary hover:bg-primary hover:text-white px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95"
+                              >
+                                ADD +
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
-
-                      <div className="mt-3">
-                        {item.hasVariants ? (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex bg-dark rounded-lg p-1 w-fit">
-                              <button 
-                                onClick={() => handleVariantChange(item.id, "half")}
-                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                  (variants[item.id] || "full") === "half" ? "bg-primary text-white" : "text-gray-400 hover:text-white"
-                                }`}
-                              >
-                                Half
-                              </button>
-                              <button 
-                                onClick={() => handleVariantChange(item.id, "full")}
-                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                  (variants[item.id] || "full") === "full" ? "bg-primary text-white" : "text-gray-400 hover:text-white"
-                                }`}
-                              >
-                                Full
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => addToCart(item)}
-                              className="bg-primary/10 text-primary hover:bg-primary hover:text-white w-fit px-4 py-1.5 rounded-lg text-sm font-bold transition-colors"
-                            >
-                              ADD +
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => addToCart(item)}
-                            className="bg-primary/10 text-primary hover:bg-primary hover:text-white px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95"
-                          >
-                            ADD +
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
+                </div>
+              )
+            ))
+          )}
         </div>
+        
+        {/* FOOTER */}
+        <footer className="mt-12 bg-dark-paper border-t border-dark-border py-8 px-4">
+          <div className="max-w-3xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+            <div>
+              <h3 className="text-xl font-bold text-white mb-1">APNI <span className="text-primary">RASOI</span></h3>
+              <p className="text-sm text-gray-400">Authentic Home Cooked Vegetarian Food</p>
+            </div>
+            <div className="text-sm text-gray-400 flex flex-col gap-1 items-center md:items-end">
+              <span className="flex items-center gap-2"><Phone size={14}/> +91 96167 89607</span>
+              <span>Available for Daily & Society Bulk Orders</span>
+            </div>
+          </div>
+          <div className="max-w-3xl mx-auto mt-6 pt-4 border-t border-dark-border/50 text-xs text-gray-500 text-center">
+            © {new Date().getFullYear()} Apni Rasoi. All rights reserved.
+          </div>
+        </footer>
       </div>
 
       {/* MOBILE CART BUTTON */}
