@@ -16,7 +16,7 @@ export default function AdminPage() {
   // Simple password check (Note: For a real production app, use NextAuth or Supabase Auth)
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "apni123") {
+    if (password === "123") {
       setIsAuthenticated(true);
       setError("");
     } else {
@@ -105,7 +105,7 @@ export default function AdminPage() {
               Login
             </button>
           </div>
-          <p className="text-gray-500 text-xs text-center mt-6">Hint: The password is apni123</p>
+          <p className="text-gray-500 text-xs text-center mt-6">Hint: The password is 123</p>
         </form>
       </div>
     );
