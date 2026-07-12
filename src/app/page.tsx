@@ -65,7 +65,7 @@ const MENU_ITEMS: MenuItem[] = [
     price: { half: 80, full: 150 },
     category: "Main Course",
     hasVariants: true,
-    image: "https://images.unsplash.com/photo-1621996311210-9159d33b49e0?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/pasta.png",
   },
   {
     id: "m5",
@@ -80,7 +80,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "French Fries",
     price: 50,
     category: "Appetizers",
-    image: "https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/french_fries.png",
   },
   {
     id: "a2",
@@ -125,7 +125,7 @@ const MENU_ITEMS: MenuItem[] = [
     price: 40,
     category: "Drinks",
     description: "300ML",
-    image: "https://images.unsplash.com/photo-1634562505500-11231362e514?auto=format&fit=crop&q=80&w=400&h=300",
+    image: "/images/lassi.png",
   },
   {
     id: "d4",
