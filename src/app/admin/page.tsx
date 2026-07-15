@@ -138,11 +138,11 @@ export default function AdminPage() {
                   
                   <button
                     onClick={() => toggleStock(item)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      isAvailable 
-                        ? "bg-green-500/10 text-green-500 hover:bg-green-500/20" 
-                        : "bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                    }`}
+                    style={{
+                      backgroundColor: isAvailable ? '#22c55e' : '#ef4444',
+                      color: '#ffffff'
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all hover:opacity-80"
                   >
                     {isAvailable ? (
                       <><CheckCircle2 size={16} /> IN STOCK</>

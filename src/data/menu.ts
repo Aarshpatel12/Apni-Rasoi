@@ -83,6 +83,13 @@ export const MENU_ITEMS: MenuItem[] = [
     image: "/images/dahi_k_sholay.png",
   },
   {
+    id: "a5",
+    name: "Vada Pao",
+    price: 40,
+    category: "Appetizers",
+    image: "/images/vada_pao.png",
+  },
+  {
     id: "d1",
     name: "Masala Chaas",
     price: 20,
