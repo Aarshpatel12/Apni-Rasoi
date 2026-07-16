@@ -137,4 +137,18 @@ export const MENU_ITEMS: MenuItem[] = [
     description: "300ML",
     image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&q=80&w=400&h=300",
   },
+  {
+    id: "a6",
+    name: "Frozen Bread Pakoda",
+    price: 30,
+    category: "Appetizers",
+    image: "/images/BreadPakodaFrozen.png",
+  },
+  {
+    id: "a7",
+    name: "Veg Cutlet [6pcs]",
+    price: 120,
+    category: "Appetizers",
+    image: "/images/cutlet.png",
+  },
 ];
