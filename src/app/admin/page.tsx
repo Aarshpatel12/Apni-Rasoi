@@ -26,9 +26,12 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const DEFAULT_CATEGORIES = ["Main Course", "Appetizers", "Drinks"];
+const DEFAULT_CATEGORIES = ["Main Course", "Appetizers", "Drinks", "Desserts"];
 
 const SAMPLE_IMAGES = [
+  { name: "Special Halwa", url: "/images/special_halwa.jpg" },
+  { name: "Suji Ka Halwa", url: "/images/suji_halwa.jpg" },
+  { name: "Jaggery Powder", url: "/images/jaggery_powder.jpg" },
   { name: "Veg Burger", url: "/images/veg_burger.png" },
   { name: "Cheese Burger", url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400&h=300" },
   { name: "Paneer Burger", url: "/images/paneer_burger.png" },

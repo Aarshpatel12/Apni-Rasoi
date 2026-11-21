@@ -152,4 +152,28 @@ export const MENU_ITEMS: MenuItem[] = [
     category: "Appetizers",
     image: "/images/cutlet.png",
   },
+  {
+    id: "ds1",
+    name: "Special Desi Ghee Halwa",
+    price: 1000,
+    category: "Desserts",
+    description: "1 KG | Authentic rich halwa prepared in pure desi ghee with cashews & almonds",
+    image: "/images/special_halwa.jpg",
+  },
+  {
+    id: "ds2",
+    name: "Organic Jaggery Powder",
+    price: 900,
+    category: "Desserts",
+    description: "1 KG | 100% Pure, chemical-free natural jaggery (gur) powder",
+    image: "/images/jaggery_powder.jpg",
+  },
+  {
+    id: "ds3",
+    name: "Suji Ka Halwa",
+    price: 500,
+    category: "Desserts",
+    description: "1 KG | Traditional golden roasted semolina halwa with raisins & dry fruits",
+    image: "/images/suji_halwa.jpg",
+  },
 ];

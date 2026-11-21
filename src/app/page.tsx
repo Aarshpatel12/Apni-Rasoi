@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   Trash2,
   Search,
-  AlertCircle
+  AlertCircle,
+  CakeSlice
 } from "lucide-react";
 import { MENU_ITEMS, MenuItem } from "@/data/menu";
 import { supabase } from "@/lib/supabase";
@@ -27,7 +28,7 @@ type CartItem = {
   variant?: "half" | "full";
 };
 
-const DEFAULT_CATEGORIES = ["Main Course", "Appetizers", "Drinks"];
+const DEFAULT_CATEGORIES = ["Main Course", "Appetizers", "Drinks", "Desserts"];
 
 export default function ApniRasoi() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
@@ -351,7 +352,7 @@ export default function ApniRasoi() {
           <div className="py-3 px-4 overflow-x-auto no-scrollbar">
             <div className="flex gap-4 max-w-3xl mx-auto">
               {categories.map((cat) => {
-                const Icon = cat === "Main Course" ? UtensilsCrossed : cat === "Appetizers" ? ChefHat : cat === "Drinks" ? Coffee : UtensilsCrossed;
+                const Icon = cat === "Main Course" ? UtensilsCrossed : cat === "Appetizers" ? ChefHat : cat === "Drinks" ? Coffee : cat === "Desserts" ? CakeSlice : UtensilsCrossed;
                 if (searchQuery && !groupedMenu[cat]) return null;
 
                 return (
