@@ -30,7 +30,18 @@ type CartItem = {
 const DEFAULT_CATEGORIES = ["Main Course", "Appetizers", "Drinks"];
 
 export default function ApniRasoi() {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(MENU_ITEMS);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const local = localStorage.getItem("apni_rasoi_menu_cache");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return MENU_ITEMS;
+  });
   const [activeCategory, setActiveCategory] = useState<string>("Main Course");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isBulkOrder, setIsBulkOrder] = useState(false);
@@ -61,7 +72,21 @@ export default function ApniRasoi() {
   };
 
   useEffect(() => {
-    // Fetch menu items from API with cache busting
+    const syncFromCache = () => {
+      if (typeof window !== "undefined") {
+        try {
+          const local = localStorage.getItem("apni_rasoi_menu_cache");
+          if (local) {
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setMenuItems(parsed);
+            }
+          }
+        } catch {}
+      }
+    };
+
+    // Fast background sync with API
     const fetchMenu = async () => {
       try {
         const res = await fetch(`/api/menu?t=${Date.now()}`, {
@@ -74,6 +99,11 @@ export default function ApniRasoi() {
         const data = await res.json();
         if (data.success && Array.isArray(data.items)) {
           setMenuItems(data.items);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("apni_rasoi_menu_cache", JSON.stringify(data.items));
+            } catch {}
+          }
         }
       } catch (err) {
         console.error("Failed to load dynamic menu", err);
@@ -83,9 +113,24 @@ export default function ApniRasoi() {
 
     // Re-fetch when user refocuses tab (e.g. after editing in Admin panel)
     const handleFocus = () => {
+      syncFromCache();
       fetchMenu();
     };
+
+    // Cross-tab real-time sync when Admin updates something
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "apni_rasoi_menu_cache" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMenuItems(parsed);
+          }
+        } catch {}
+      }
+    };
+
     window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleStorage);
 
     // Fetch stock status on mount
     const fetchStock = async () => {
@@ -133,6 +178,7 @@ export default function ApniRasoi() {
       
     return () => {
       window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleStorage);
       supabase.removeChannel(channel);
     };
   }, []);

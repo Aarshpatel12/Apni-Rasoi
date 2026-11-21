@@ -52,8 +52,19 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const [items, setItems] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [items, setItems] = useState<MenuItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const local = localStorage.getItem("apni_rasoi_menu_cache");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return MENU_ITEMS.map((item) => ({ ...item, isAvailable: true }));
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Search & Filters
@@ -120,7 +131,6 @@ export default function AdminPage() {
 
   // Fetch items from API with cache busting
   const fetchItems = async () => {
-    setIsLoading(true);
     try {
       const res = await fetch(`/api/menu?t=${Date.now()}`, {
         cache: "no-store",
@@ -132,12 +142,14 @@ export default function AdminPage() {
       const data = await res.json();
       if (data.success && Array.isArray(data.items)) {
         setItems(data.items);
-      } else {
-        setItems(MENU_ITEMS.map((item) => ({ ...item, isAvailable: true })));
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("apni_rasoi_menu_cache", JSON.stringify(data.items));
+          } catch {}
+        }
       }
     } catch (err) {
       console.error("Failed to load menu items", err);
-      setItems(MENU_ITEMS.map((item) => ({ ...item, isAvailable: true })));
     } finally {
       setIsLoading(false);
     }
@@ -193,9 +205,15 @@ export default function AdminPage() {
     const newStatus = !currentStatus;
 
     // Optimistic UI update
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, isAvailable: newStatus } : i))
+    const updatedList = items.map((i) =>
+      i.id === item.id ? { ...i, isAvailable: newStatus } : i
     );
+    setItems(updatedList);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("apni_rasoi_menu_cache", JSON.stringify(updatedList));
+      } catch {}
+    }
 
     try {
       const res = await fetch("/api/menu", {
@@ -225,9 +243,15 @@ export default function AdminPage() {
       }
     } catch (err: any) {
       // Revert on failure
-      setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, isAvailable: currentStatus } : i))
+      const revertedList = items.map((i) =>
+        i.id === item.id ? { ...i, isAvailable: currentStatus } : i
       );
+      setItems(revertedList);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("apni_rasoi_menu_cache", JSON.stringify(revertedList));
+        } catch {}
+      }
       showToast("Failed to update status", "error");
     }
   };
@@ -374,6 +398,11 @@ export default function AdminPage() {
 
       if (data.success) {
         setItems(data.items);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("apni_rasoi_menu_cache", JSON.stringify(data.items));
+          } catch {}
+        }
         setIsModalOpen(false);
         showToast(
           editingItem
@@ -405,6 +434,11 @@ export default function AdminPage() {
 
       if (data.success) {
         setItems(data.items);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("apni_rasoi_menu_cache", JSON.stringify(data.items));
+          } catch {}
+        }
         showToast(`Deleted "${itemToDelete.name}" from menu`);
         setItemToDelete(null);
       } else {
@@ -437,6 +471,11 @@ export default function AdminPage() {
       const data = await res.json();
       if (data.success) {
         setItems(data.items);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("apni_rasoi_menu_cache", JSON.stringify(data.items));
+          } catch {}
+        }
         showToast("Menu successfully reset to original items");
       }
     } catch (err) {
