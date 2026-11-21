@@ -91,10 +91,6 @@ export default function AdminPage() {
   const [showSampleImages, setShowSampleImages] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Delete Confirmation Modal
-  const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
   // Toast
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -419,16 +415,18 @@ export default function AdminPage() {
     }
   };
 
-  // Delete Food Item
-  const confirmDelete = async () => {
-    if (!itemToDelete) return;
+  // Delete Food Item with confirmation prompt
+  const handleDeleteItem = async (item: MenuItem) => {
+    const isConfirmed = window.confirm(
+      `Are you sure you want to delete "${item.name}" from the menu?\n\nThis action cannot be undone.`
+    );
+    if (!isConfirmed) return;
 
-    setIsDeleting(true);
     try {
       const res = await fetch("/api/menu", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", id: itemToDelete.id }),
+        body: JSON.stringify({ action: "delete", id: item.id }),
       });
       const data = await res.json();
 
@@ -439,15 +437,12 @@ export default function AdminPage() {
             localStorage.setItem("apni_rasoi_menu_cache", JSON.stringify(data.items));
           } catch {}
         }
-        showToast(`Deleted "${itemToDelete.name}" from menu`);
-        setItemToDelete(null);
+        showToast(`Deleted "${item.name}" from menu`);
       } else {
         throw new Error(data.error || "Failed to delete item");
       }
     } catch (err: any) {
       showToast(err.message || "Failed to delete item", "error");
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -876,8 +871,8 @@ export default function AdminPage() {
 
                     {/* Delete Button */}
                     <button
-                      onClick={() => setItemToDelete(item)}
-                      title="Delete Item"
+                      onClick={() => handleDeleteItem(item)}
+                      title={`Delete ${item.name}`}
                       className="p-2 rounded-lg bg-dark hover:bg-red-950 text-gray-400 hover:text-red-400 border border-dark-border hover:border-red-900 transition-colors"
                     >
                       <Trash2 size={15} />
@@ -1217,48 +1212,6 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* DELETE CONFIRMATION MODAL */}
-      {itemToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-dark-paper border border-dark-border rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-950/60 border border-red-800 text-red-400 flex items-center justify-center mx-auto">
-              <Trash2 size={24} />
-            </div>
-            <div className="text-center space-y-1">
-              <h3 className="text-xl font-bold text-white">Delete Food Item?</h3>
-              <p className="text-sm text-gray-400">
-                Are you sure you want to remove{" "}
-                <span className="text-white font-semibold">
-                  "{itemToDelete.name}"
-                </span>{" "}
-                from the menu? This cannot be undone.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 pt-4 border-t border-dark-border">
-              <button
-                type="button"
-                onClick={() => setItemToDelete(null)}
-                className="flex-1 py-3 rounded-xl border border-dark-border hover:bg-dark text-sm font-medium text-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={isDeleting}
-                className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-all shadow-lg shadow-red-600/30 flex items-center justify-center gap-2"
-              >
-                {isDeleting && (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                )}
-                <span>Delete Item</span>
-              </button>
-            </div>
           </div>
         </div>
       )}
