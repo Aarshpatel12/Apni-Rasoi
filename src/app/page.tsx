@@ -27,9 +27,10 @@ type CartItem = {
   variant?: "half" | "full";
 };
 
-const CATEGORIES = ["Main Course", "Appetizers", "Drinks"] as const;
+const DEFAULT_CATEGORIES = ["Main Course", "Appetizers", "Drinks"];
 
 export default function ApniRasoi() {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(MENU_ITEMS);
   const [activeCategory, setActiveCategory] = useState<string>("Main Course");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isBulkOrder, setIsBulkOrder] = useState(false);
@@ -43,7 +44,37 @@ export default function ApniRasoi() {
   // Variant selections per menu item (for items with half/full)
   const [variants, setVariants] = useState<Record<string, "half" | "full">>({});
 
+  // Dynamic categories list based on available items
+  const categories = useMemo(() => {
+    const set = new Set(DEFAULT_CATEGORIES);
+    menuItems.forEach((i) => {
+      if (i.category) set.add(i.category);
+    });
+    return Array.from(set);
+  }, [menuItems]);
+
+  const isItemOutOfStock = (item: MenuItem) => {
+    if (stockStatus[item.id] !== undefined) {
+      return !stockStatus[item.id];
+    }
+    return item.isAvailable === false;
+  };
+
   useEffect(() => {
+    // Fetch menu items from API
+    const fetchMenu = async () => {
+      try {
+        const res = await fetch("/api/menu");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.items)) {
+          setMenuItems(data.items);
+        }
+      } catch (err) {
+        console.error("Failed to load dynamic menu", err);
+      }
+    };
+    fetchMenu();
+
     // Fetch stock status on mount
     const fetchStock = async () => {
       try {
@@ -102,8 +133,8 @@ export default function ApniRasoi() {
 
   const groupedMenu = useMemo(() => {
     const groups: Record<string, MenuItem[]> = {};
-    CATEGORIES.forEach((cat) => {
-      const filteredItems = MENU_ITEMS.filter(
+    categories.forEach((cat) => {
+      const filteredItems = menuItems.filter(
         (item) => 
           item.category === cat && 
           item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -113,7 +144,7 @@ export default function ApniRasoi() {
       }
     });
     return groups;
-  }, [searchQuery]);
+  }, [categories, menuItems, searchQuery]);
 
   const handleVariantChange = (menuId: string, variant: "half" | "full") => {
     setVariants((prev) => ({ ...prev, [menuId]: variant }));
@@ -121,7 +152,7 @@ export default function ApniRasoi() {
 
   const addToCart = (item: MenuItem) => {
     // Check if out of stock
-    if (stockStatus[item.id] === false) return;
+    if (isItemOutOfStock(item)) return;
 
     let price = 0;
     let selectedVariant: "half" | "full" | undefined = undefined;
@@ -260,8 +291,8 @@ export default function ApniRasoi() {
 
           <div className="py-3 px-4 overflow-x-auto no-scrollbar">
             <div className="flex gap-4 max-w-3xl mx-auto">
-              {CATEGORIES.map((cat) => {
-                const Icon = cat === "Main Course" ? UtensilsCrossed : cat === "Appetizers" ? ChefHat : Coffee;
+              {categories.map((cat) => {
+                const Icon = cat === "Main Course" ? UtensilsCrossed : cat === "Appetizers" ? ChefHat : cat === "Drinks" ? Coffee : UtensilsCrossed;
                 if (searchQuery && !groupedMenu[cat]) return null;
 
                 return (
@@ -305,7 +336,7 @@ export default function ApniRasoi() {
               </button>
             </div>
           ) : (
-            CATEGORIES.map((cat) => (
+            categories.map((cat) => (
               groupedMenu[cat] && (
                 <div key={cat} id={cat} className="scroll-mt-40">
                   <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 border-b border-dark-border pb-2">
@@ -313,7 +344,7 @@ export default function ApniRasoi() {
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {groupedMenu[cat].map((item) => {
-                      const isOutOfStock = stockStatus[item.id] === false;
+                      const isOutOfStock = isItemOutOfStock(item);
                       
                       return (
                         <div 

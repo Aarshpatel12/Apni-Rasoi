@@ -2,10 +2,11 @@ export type MenuItem = {
   id: string;
   name: string;
   price: number | { half: number; full: number };
-  category: "Main Course" | "Appetizers" | "Drinks";
+  category: "Main Course" | "Appetizers" | "Drinks" | string;
   description?: string;
   image: string;
   hasVariants?: boolean;
+  isAvailable?: boolean;
 };
 
 export const MENU_ITEMS: MenuItem[] = [
