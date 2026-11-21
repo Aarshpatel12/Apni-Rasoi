@@ -61,10 +61,16 @@ export default function ApniRasoi() {
   };
 
   useEffect(() => {
-    // Fetch menu items from API
+    // Fetch menu items from API with cache busting
     const fetchMenu = async () => {
       try {
-        const res = await fetch("/api/menu");
+        const res = await fetch(`/api/menu?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+        });
         const data = await res.json();
         if (data.success && Array.isArray(data.items)) {
           setMenuItems(data.items);
@@ -74,6 +80,12 @@ export default function ApniRasoi() {
       }
     };
     fetchMenu();
+
+    // Re-fetch when user refocuses tab (e.g. after editing in Admin panel)
+    const handleFocus = () => {
+      fetchMenu();
+    };
+    window.addEventListener("focus", handleFocus);
 
     // Fetch stock status on mount
     const fetchStock = async () => {
@@ -120,6 +132,7 @@ export default function ApniRasoi() {
       .subscribe();
       
     return () => {
+      window.removeEventListener("focus", handleFocus);
       supabase.removeChannel(channel);
     };
   }, []);

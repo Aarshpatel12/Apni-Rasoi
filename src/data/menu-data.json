@@ -79,10 +79,11 @@
   {
     "id": "a3",
     "name": "Pizza Samosa",
-    "price": 25,
+    "price": 30,
     "category": "Appetizers",
     "image": "/images/pizza_samosa.png",
-    "isAvailable": true
+    "isAvailable": true,
+    "hasVariants": false
   },
   {
     "id": "a4",

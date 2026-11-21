@@ -118,11 +118,17 @@ export default function AdminPage() {
     sessionStorage.removeItem("admin_authenticated");
   };
 
-  // Fetch items from API
+  // Fetch items from API with cache busting
   const fetchItems = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/menu");
+      const res = await fetch(`/api/menu?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
       const data = await res.json();
       if (data.success && Array.isArray(data.items)) {
         setItems(data.items);
@@ -275,31 +281,39 @@ export default function AdminPage() {
     setIsModalOpen(true);
   };
 
-  // Handle local image file upload
+  // Handle local image file upload (converts & compresses to base64 for instant cloud compatibility)
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploadingImage(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        setFormImage(data.url);
-        showToast("Image uploaded successfully!");
-      } else {
-        throw new Error(data.error || "Upload failed");
-      }
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 500;
+          const scale = Math.min(1, MAX_WIDTH / img.width);
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+          setFormImage(dataUrl);
+          setIsUploadingImage(false);
+          showToast("Image processed and ready!");
+        };
+        img.onerror = () => {
+          setIsUploadingImage(false);
+          showToast("Failed to process image", "error");
+        };
+        img.src = uploadEvent.target?.result as string;
+      };
+      reader.readAsDataURL(file);
     } catch (err: any) {
-      showToast(err.message || "Failed to upload image", "error");
-    } finally {
       setIsUploadingImage(false);
+      showToast(err.message || "Failed to read image file", "error");
     }
   };
 
