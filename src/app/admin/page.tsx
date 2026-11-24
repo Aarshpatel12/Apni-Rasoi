@@ -29,6 +29,7 @@ import {
 const DEFAULT_CATEGORIES = ["Main Course", "Appetizers", "Drinks", "Desserts"];
 
 const SAMPLE_IMAGES = [
+  { name: "Gajar Ka Halwa", url: "/images/gajar_halwa.jpg" },
   { name: "Special Halwa", url: "/images/special_halwa.jpg" },
   { name: "Suji Ka Halwa", url: "/images/suji_halwa.jpg" },
   { name: "Jaggery Powder", url: "/images/jaggery_powder.jpg" },

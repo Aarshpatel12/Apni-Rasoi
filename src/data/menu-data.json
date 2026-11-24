@@ -39,8 +39,8 @@
     "id": "m5",
     "name": "Hakka Noodles",
     "price": {
-      "half": 90,
-      "full": 170
+      "half": 100,
+      "full": 190
     },
     "category": "Main Course",
     "hasVariants": true,
@@ -196,6 +196,15 @@
     "category": "Desserts",
     "description": "1 KG | Traditional golden roasted semolina halwa with raisins & dry fruits",
     "image": "/images/suji_halwa.jpg",
+    "isAvailable": true
+  },
+  {
+    "id": "ds4",
+    "name": "Gajar Ka Halwa",
+    "price": 900,
+    "category": "Desserts",
+    "description": "1 KG | Authentic slow-cooked red carrot halwa with khoya, dry fruits & pure desi ghee",
+    "image": "/images/gajar_halwa.jpg",
     "isAvailable": true
   }
 ]

@@ -42,7 +42,7 @@ export const MENU_ITEMS: MenuItem[] = [
   {
     id: "m5",
     name: "Hakka Noodles",
-    price: { half: 90, full: 170 },
+    price: { half: 100, full: 190 },
     category: "Main Course",
     hasVariants: true,
     image: "/images/hakka_noodles.png",
@@ -175,5 +175,13 @@ export const MENU_ITEMS: MenuItem[] = [
     category: "Desserts",
     description: "1 KG | Traditional golden roasted semolina halwa with raisins & dry fruits",
     image: "/images/suji_halwa.jpg",
+  },
+  {
+    id: "ds4",
+    name: "Gajar Ka Halwa",
+    price: 900,
+    category: "Desserts",
+    description: "1 KG | Authentic slow-cooked red carrot halwa with khoya, dry fruits & pure desi ghee",
+    image: "/images/gajar_halwa.jpg",
   },
 ];
