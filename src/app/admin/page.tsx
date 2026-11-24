@@ -36,7 +36,7 @@ const SAMPLE_IMAGES = [
   { name: "Veg Burger", url: "/images/veg_burger.png" },
   { name: "Cheese Burger", url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400&h=300" },
   { name: "Paneer Burger", url: "/images/paneer_burger.png" },
-  { name: "Pasta", url: "/images/pasta.png" },
+  { name: "Red Sauce Pasta", url: "/images/pasta.png" },
   { name: "White Sauce Pasta", url: "/images/white_sauce_pasta.png" },
   { name: "Hakka Noodles", url: "/images/hakka_noodles.png" },
   { name: "French Fries", url: "/images/french_fries.png" },

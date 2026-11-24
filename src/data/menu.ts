@@ -33,8 +33,8 @@ export const MENU_ITEMS: MenuItem[] = [
   },
   {
     id: "m4",
-    name: "Pasta",
-    price: { half: 80, full: 150 },
+    name: "Red Sauce Pasta",
+    price: { half: 110, full: 199 },
     category: "Main Course",
     hasVariants: true,
     image: "/images/pasta.png",

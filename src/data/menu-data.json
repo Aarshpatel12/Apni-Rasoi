@@ -25,10 +25,10 @@
   },
   {
     "id": "m4",
-    "name": "Pasta",
+    "name": "Red Sauce Pasta",
     "price": {
-      "half": 80,
-      "full": 150
+      "half": 110,
+      "full": 199
     },
     "category": "Main Course",
     "hasVariants": true,
